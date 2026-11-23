@@ -25,7 +25,7 @@ export async function upstreamFetch<T = any>(path: string, revalidate = 180): Pr
   try {
     const response = await fetch(`${UPSTREAM_BASE_URL}/${path.replace(/^\/+/, "")}`, {
       headers: { Accept: "application/json" },
-      next: { revalidate },
+      ...(revalidate === 0 ? { cache: "no-store" as const } : { next: { revalidate } }),
     });
 
     if (!response.ok) return null;
@@ -37,7 +37,7 @@ export async function upstreamFetch<T = any>(path: string, revalidate = 180): Pr
 }
 
 export async function getHomepage() {
-  const payload = await upstreamFetch<any>("anime/homepage", 180);
+  const payload = await upstreamFetch<any>("anime/homepage", 0);
   const ongoing = animeList(payload?.ongoing);
   const popular = animeList(payload?.popular);
   const upcoming = animeList(payload?.upcoming);
@@ -47,7 +47,7 @@ export async function getHomepage() {
     return { ongoing, popular, upcoming, completed };
   }
 
-  const fallback = await upstreamFetch<any>("anime?page=1&limit=24", 180);
+  const fallback = await upstreamFetch<any>("anime?page=1&limit=24", 0);
   const items = animeList(fallback);
   return { ongoing: items, popular: items.slice(0, 10), upcoming: [], completed: [] };
 }

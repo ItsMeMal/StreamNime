@@ -3,7 +3,7 @@ import { AnimeCard } from "@/components/anime-card";
 import { getAnimeSchedule } from "@/lib/upstream";
 
 export const metadata: Metadata = { title: "Release schedule" };
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function SchedulePage() {
   const schedule = await getAnimeSchedule();

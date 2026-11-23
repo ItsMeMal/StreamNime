@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AnimeShelf } from "@/components/anime-card";
 import { getHomepage } from "@/lib/upstream";
 
-export const revalidate = 180;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const { ongoing, popular, upcoming, completed } = await getHomepage();
