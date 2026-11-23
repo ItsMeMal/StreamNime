@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const API_BASE = process.env.NEXUS_CHAN_API_URL?.replace(/\/+$/, "");
+const UPSTREAM_BASE_URL = process.env.STREAMNIME_UPSTREAM_URL?.replace(/\/+$/, "");
 
 function isAllowedPath(path: string[]) {
   if (path.length === 1 && path[0] === "health") return true;
@@ -29,8 +29,8 @@ function isAllowedPath(path: string[]) {
 function rewriteApiReferences(value: any): any {
   if (typeof value === "string") {
     return value
-      .replaceAll(API_BASE || "__NO_API_BASE__", "/api/nexus")
-      .replace(/^\/api\/v1(?=\/)/, "/api/nexus");
+      .replaceAll(UPSTREAM_BASE_URL || "__NO_UPSTREAM_BASE_URL__", "/api/catalog")
+      .replace(/^\/api\/v1(?=\/)/, "/api/catalog");
   }
   if (Array.isArray(value)) return value.map(rewriteApiReferences);
   if (value && typeof value === "object") {
@@ -43,7 +43,7 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
   if (request.method !== "GET") {
     return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
   }
-  if (!API_BASE) {
+  if (!UPSTREAM_BASE_URL) {
     return NextResponse.json({ error: "Anime service is not configured" }, { status: 503 });
   }
 
@@ -52,7 +52,7 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const upstreamUrl = new URL(`${API_BASE}/${path.map(encodeURIComponent).join("/")}`);
+  const upstreamUrl = new URL(`${UPSTREAM_BASE_URL}/${path.map(encodeURIComponent).join("/")}`);
   request.nextUrl.searchParams.forEach((value, key) => upstreamUrl.searchParams.append(key, value));
 
   const isMediaProxy = path.join("/") === "anime/hls" || path.join("/") === "anime/ai-subtitle";
@@ -98,8 +98,8 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     if (path.join("/") === "anime/hls" && /mpegurl|m3u8/i.test(contentType)) {
       const playlist = await upstream.text();
       const rewritten = playlist
-        .replaceAll("/api/v1/anime/hls", "/api/nexus/anime/hls")
-        .replaceAll(API_BASE, "/api/nexus");
+        .replaceAll("/api/v1/anime/hls", "/api/catalog/anime/hls")
+        .replaceAll(UPSTREAM_BASE_URL, "/api/catalog");
       return new NextResponse(rewritten, { status: 200, headers });
     }
 

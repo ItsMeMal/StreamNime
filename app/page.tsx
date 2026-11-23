@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AnimeShelf } from "@/components/anime-card";
-import { getHomepage } from "@/lib/nexus";
+import { getHomepage } from "@/lib/upstream";
 
 export const revalidate = 180;
 

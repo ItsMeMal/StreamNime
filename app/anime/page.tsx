@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AnimeExplorer } from "@/components/anime-explorer";
-import { getAnimeIndex } from "@/lib/nexus";
+import { getAnimeIndex } from "@/lib/upstream";
 
 export const metadata: Metadata = { title: "Explore anime" };
 export const revalidate = 120;

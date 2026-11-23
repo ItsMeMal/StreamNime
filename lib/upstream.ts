@@ -1,14 +1,14 @@
 import "server-only";
 import { animeList, type Anime } from "@/lib/anime";
 
-const API_BASE = process.env.NEXUS_CHAN_API_URL?.replace(/\/+$/, "");
+const UPSTREAM_BASE_URL = process.env.STREAMNIME_UPSTREAM_URL?.replace(/\/+$/, "");
 
 function rewriteApiReferences(value: any): any {
   if (typeof value === "string") {
-    let result = value.replaceAll("/api/v1/", "/api/nexus/");
-    if (API_BASE) {
-      result = result.replaceAll(API_BASE, "/api/nexus");
-      result = result.replaceAll(encodeURIComponent(API_BASE), "/api/nexus");
+    let result = value.replaceAll("/api/v1/", "/api/catalog/");
+    if (UPSTREAM_BASE_URL) {
+      result = result.replaceAll(UPSTREAM_BASE_URL, "/api/catalog");
+      result = result.replaceAll(encodeURIComponent(UPSTREAM_BASE_URL), "/api/catalog");
     }
     return result;
   }
@@ -19,11 +19,11 @@ function rewriteApiReferences(value: any): any {
   return value;
 }
 
-export async function nexusFetch<T = any>(path: string, revalidate = 180): Promise<T | null> {
-  if (!API_BASE) return null;
+export async function upstreamFetch<T = any>(path: string, revalidate = 180): Promise<T | null> {
+  if (!UPSTREAM_BASE_URL) return null;
 
   try {
-    const response = await fetch(`${API_BASE}/${path.replace(/^\/+/, "")}`, {
+    const response = await fetch(`${UPSTREAM_BASE_URL}/${path.replace(/^\/+/, "")}`, {
       headers: { Accept: "application/json" },
       next: { revalidate },
     });
@@ -37,7 +37,7 @@ export async function nexusFetch<T = any>(path: string, revalidate = 180): Promi
 }
 
 export async function getHomepage() {
-  const payload = await nexusFetch<any>("anime/homepage", 180);
+  const payload = await upstreamFetch<any>("anime/homepage", 180);
   const ongoing = animeList(payload?.ongoing);
   const popular = animeList(payload?.popular);
   const upcoming = animeList(payload?.upcoming);
@@ -47,7 +47,7 @@ export async function getHomepage() {
     return { ongoing, popular, upcoming, completed };
   }
 
-  const fallback = await nexusFetch<any>("anime?page=1&limit=24", 180);
+  const fallback = await upstreamFetch<any>("anime?page=1&limit=24", 180);
   const items = animeList(fallback);
   return { ongoing: items, popular: items.slice(0, 10), upcoming: [], completed: [] };
 }
@@ -56,12 +56,12 @@ export async function getAnimeIndex(query?: string) {
   const path = query?.trim()
     ? `anime/search?q=${encodeURIComponent(query.trim())}`
     : "anime?page=1&limit=36&sort=year";
-  const payload = await nexusFetch<any>(path, 120);
+  const payload = await upstreamFetch<any>(path, 120);
   return animeList(payload);
 }
 
 export async function getAnimeDetail(slug: string) {
-  const payload = await nexusFetch<any>(`anime/${encodeURIComponent(slug)}`, 300);
+  const payload = await upstreamFetch<any>(`anime/${encodeURIComponent(slug)}`, 300);
   if (!payload || typeof payload !== "object") return null;
   return {
     ...payload,
@@ -76,6 +76,6 @@ export async function getAnimeDetail(slug: string) {
 }
 
 export async function getAnimeSchedule() {
-  const payload = await nexusFetch<any>("anime/schedule", 300);
+  const payload = await upstreamFetch<any>("anime/schedule", 300);
   return animeList(payload);
 }

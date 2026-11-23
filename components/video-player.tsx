@@ -69,7 +69,7 @@ export function VideoPlayer({
     setLoading(true);
     setActiveServer(server.title);
     try {
-      const response = await fetch(`/api/nexus/anime/server/${encodeURIComponent(server.serverId)}`);
+      const response = await fetch(`/api/catalog/anime/server/${encodeURIComponent(server.serverId)}`);
       if (!response.ok) throw new Error("Server unavailable");
       const payload = await response.json();
       setStream({ url: payload.url || server.url || "", embed: payload.embed || "", subtitleUrl: payload.subtitleUrl || "" });

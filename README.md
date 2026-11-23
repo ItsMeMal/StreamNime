@@ -1,6 +1,6 @@
 # StreamNime
 
-A server-rendered anime discovery and streaming frontend powered by the Nexus-Chan API.
+A server-rendered anime discovery and streaming frontend.
 
 ## Stack
 
@@ -12,17 +12,17 @@ A server-rendered anime discovery and streaming frontend powered by the Nexus-Ch
 ## Local development
 
 1. Copy `.env.example` to `.env.local`.
-2. Set the server-only `NEXUS_CHAN_API_URL` value.
+2. Set the server-only `STREAMNIME_UPSTREAM_URL` value.
 3. Install dependencies with `npm install`.
 4. Start the app with `npm run dev`.
 
 ## API security
 
-The browser only calls StreamNime's same-origin `/api/nexus/*` route. The upstream API base is read from `NEXUS_CHAN_API_URL` on the server and must never be renamed with a `NEXT_PUBLIC_` prefix.
+The browser only calls StreamNime's same-origin `/api/catalog/*` route. The upstream base URL is read from `STREAMNIME_UPSTREAM_URL` on the server and must never be renamed with a `NEXT_PUBLIC_` prefix.
 
-The proxy is GET-only and allowlists the anime read endpoints needed by the application. API-origin references in JSON responses are rewritten to the same-origin proxy, including HLS playlist and subtitle proxy references. No API credential is stored in the repository or shipped to the browser.
+The proxy is GET-only and allowlists the anime read endpoints needed by the application. API-origin references in JSON responses are rewritten to the same-origin proxy, including HLS playlist and subtitle proxy references. No upstream credential is stored in the repository or shipped to the browser.
 
-Set `NEXUS_CHAN_API_URL` as a server-side Vercel environment variable for Production, Preview, and Development.
+Set `STREAMNIME_UPSTREAM_URL` as a server-side Vercel environment variable for Production, Preview, and Development.
 
 ## Features
 
@@ -34,4 +34,4 @@ Set `NEXUS_CHAN_API_URL` as a server-side Vercel environment variable for Produc
 - Release schedule
 - Device-local watchlist
 
-The watchlist is stored in the browser's local storage; it does not require an account or write to the upstream API.
+The watchlist is stored in the browser's local storage; it does not require an account or write to the upstream service.

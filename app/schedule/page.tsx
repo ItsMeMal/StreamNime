@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AnimeCard } from "@/components/anime-card";
-import { getAnimeSchedule } from "@/lib/nexus";
+import { getAnimeSchedule } from "@/lib/upstream";
 
 export const metadata: Metadata = { title: "Release schedule" };
 export const revalidate = 300;

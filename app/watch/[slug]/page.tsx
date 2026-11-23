@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAnimeDetail, nexusFetch } from "@/lib/nexus";
+import { getAnimeDetail, nexusFetch } from "@/lib/upstream";
 import { VideoPlayer } from "@/components/video-player";
 
 type Props = {

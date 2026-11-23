@@ -20,7 +20,7 @@ export function AnimeExplorer({ initialAnime, initialQuery = "" }: { initialAnim
     setBusy(true);
     setError("");
     try {
-      const response = await fetch(`/api/nexus/anime/search?q=${encodeURIComponent(value)}`);
+      const response = await fetch(`/api/catalog/anime/search?q=${encodeURIComponent(value)}`);
       if (!response.ok) throw new Error("Search is unavailable right now.");
       const payload = await response.json();
       const source = Array.isArray(payload) ? payload : payload?.items || payload?.results?.data || payload?.results || [];
@@ -56,7 +56,7 @@ export function AnimeExplorer({ initialAnime, initialQuery = "" }: { initialAnim
       {error && <p className="form-error">{error}</p>}
       <div className="explore-result-line">
         <span>{items.length} {items.length === 1 ? "title" : "titles"}</span>
-        <span className="result-note">ANIME INDEX / NEXUS-CHAN</span>
+        <span className="result-note">ANIME INDEX / STREAMNIME</span>
       </div>
       {items.length ? (
         <div className="anime-grid explore-grid">
