@@ -1,43 +1,39 @@
 import "server-only";
+import { headers } from "next/headers";
 import { animeList, type Anime } from "@/lib/anime";
 
-const UPSTREAM_BASE_URL = process.env.STREAMNIME_UPSTREAM_URL?.replace(/\/+$/, "");
+async function getAppOrigin(): Promise<string | null> {
+  const requestHeaders = await headers();
+  const host = (process.env.VERCEL_URL || requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "")
+    .split(",")[0]
+    .trim();
 
-function rewriteApiReferences(value: any): any {
-  if (typeof value === "string") {
-    let result = value.replaceAll("/api/v1/", "/api/catalog/");
-    if (UPSTREAM_BASE_URL) {
-      result = result.replaceAll(UPSTREAM_BASE_URL, "/api/catalog");
-      result = result.replaceAll(encodeURIComponent(UPSTREAM_BASE_URL), "/api/catalog");
-    }
-    return result;
-  }
-  if (Array.isArray(value)) return value.map(rewriteApiReferences);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, rewriteApiReferences(child)]));
-  }
-  return value;
+  if (!host) return null;
+  const forwardedProtocol = (requestHeaders.get("x-forwarded-proto") || "").split(",")[0].trim();
+  const protocol = forwardedProtocol || (host.includes("localhost") ? "http" : "https");
+  return protocol + "://" + host;
 }
 
-export async function upstreamFetch<T = any>(path: string, revalidate = 180): Promise<T | null> {
-  if (!UPSTREAM_BASE_URL) return null;
+export async function upstreamFetch<T = any>(path: string): Promise<T | null> {
+  const origin = await getAppOrigin();
+  if (!origin) return null;
 
   try {
-    const response = await fetch(`${UPSTREAM_BASE_URL}/${path.replace(/^\/+/, "")}`, {
+    const url = new URL("/api/catalog/" + path.replace(/^\/+/, ""), origin);
+    const response = await fetch(url, {
       headers: { Accept: "application/json" },
-      ...(revalidate === 0 ? { cache: "no-store" as const } : { next: { revalidate } }),
+      cache: "no-store",
     });
 
     if (!response.ok) return null;
-    const payload = await response.json();
-    return rewriteApiReferences(payload) as T;
+    return await response.json() as T;
   } catch {
     return null;
   }
 }
 
 export async function getHomepage() {
-  const payload = await upstreamFetch<any>("anime/homepage", 0);
+  const payload = await upstreamFetch<any>("anime/homepage");
   const ongoing = animeList(payload?.ongoing);
   const popular = animeList(payload?.popular);
   const upcoming = animeList(payload?.upcoming);
@@ -47,21 +43,21 @@ export async function getHomepage() {
     return { ongoing, popular, upcoming, completed };
   }
 
-  const fallback = await upstreamFetch<any>("anime?page=1&limit=24", 0);
+  const fallback = await upstreamFetch<any>("anime?page=1&limit=24");
   const items = animeList(fallback);
   return { ongoing: items, popular: items.slice(0, 10), upcoming: [], completed: [] };
 }
 
 export async function getAnimeIndex(query?: string) {
   const path = query?.trim()
-    ? `anime/search?q=${encodeURIComponent(query.trim())}`
+    ? "anime/search?q=" + encodeURIComponent(query.trim())
     : "anime?page=1&limit=36&sort=year";
-  const payload = await upstreamFetch<any>(path, 120);
+  const payload = await upstreamFetch<any>(path);
   return animeList(payload);
 }
 
 export async function getAnimeDetail(slug: string) {
-  const payload = await upstreamFetch<any>(`anime/${encodeURIComponent(slug)}`, 300);
+  const payload = await upstreamFetch<any>("anime/" + encodeURIComponent(slug));
   if (!payload || typeof payload !== "object") return null;
   return {
     ...payload,
@@ -76,6 +72,6 @@ export async function getAnimeDetail(slug: string) {
 }
 
 export async function getAnimeSchedule() {
-  const payload = await upstreamFetch<any>("anime/schedule", 300);
+  const payload = await upstreamFetch<any>("anime/schedule");
   return animeList(payload);
 }
