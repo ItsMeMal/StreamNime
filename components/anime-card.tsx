@@ -1,18 +1,23 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Anime } from "@/lib/anime";
 import { formatEpisodeCount } from "@/lib/anime";
 
-export function AnimeCard({ anime, index = 0 }: { anime: Anime; index?: number }) {
+export function AnimeCard({ anime }: { anime: Anime; index?: number }) {
   return (
-    <Link className="anime-card" href={`/anime/${encodeURIComponent(anime.slug)}`}>
+    <Link className="anime-card" href={"/anime/" + encodeURIComponent(anime.slug)} aria-label={"Lihat " + anime.title}>
       <div className="poster-frame">
         {anime.poster ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={anime.poster} alt={anime.title} loading={index < 5 ? "eager" : "lazy"} />
+          <Image
+            src={anime.poster}
+            alt={anime.title}
+            fill
+            unoptimized
+            sizes="(max-width: 380px) 45vw, (max-width: 640px) 29vw, (max-width: 840px) 22vw, (max-width: 1120px) 18vw, 15vw"
+          />
         ) : (
           <div className="poster-fallback"><span>SN</span></div>
         )}
-        <span className="poster-index">{String(index + 1).padStart(2, "0")}</span>
         <span className="poster-play" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="m9 6 10 6-10 6z" /></svg>
         </span>
@@ -23,7 +28,7 @@ export function AnimeCard({ anime, index = 0 }: { anime: Anime; index?: number }
           <span>{formatEpisodeCount(anime.episodes)}</span>
         </div>
         <h3>{anime.title}</h3>
-        <p>{anime.releaseYear || anime.status || "Series"}</p>
+        <p>{anime.releaseYear || anime.status || "Anime"}</p>
       </div>
     </Link>
   );
@@ -31,29 +36,24 @@ export function AnimeCard({ anime, index = 0 }: { anime: Anime; index?: number }
 
 export function AnimeShelf({
   title,
-  eyebrow,
   anime,
   href = "/anime",
-  emptyLabel = "Nothing to show here yet.",
+  emptyLabel = "Belum ada anime untuk ditampilkan.",
 }: {
   title: string;
-  eyebrow?: string;
   anime: Anime[];
   href?: string;
   emptyLabel?: string;
 }) {
   return (
-    <section className="shelf-section">
+    <section className="home-section">
       <div className="section-heading">
-        <div>
-          {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-          <h2>{title}</h2>
-        </div>
-        <Link href={href} className="text-link">View collection <span>↗</span></Link>
+        <h2>{title}</h2>
+        <Link href={href} className="text-link">Lihat semua <span>→</span></Link>
       </div>
       {anime.length ? (
         <div className="anime-grid">
-          {anime.slice(0, 8).map((item, index) => <AnimeCard key={item.slug} anime={item} index={index} />)}
+          {anime.slice(0, 8).map((item) => <AnimeCard key={item.slug} anime={item} />)}
         </div>
       ) : (
         <div className="empty-inline"><span className="empty-dot" />{emptyLabel}</div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Anime } from "@/lib/anime";
 import { AnimeCard } from "@/components/anime-card";
+import { Button } from "@/components/ui/button";
 
 const KEY = "streamnime.watchlist.v1";
 
@@ -20,18 +21,18 @@ export function WatchlistView() {
   return (
     <>
       <div className="explore-result-line">
-        <span>{items.length} saved {items.length === 1 ? "title" : "titles"}</span>
-        {items.length > 0 && <button className="quiet-button" onClick={clearList}>Clear list</button>}
+        <span>{items.length} anime tersimpan</span>
+        {items.length > 0 && <Button variant="ghost" size="sm" onClick={clearList}>Hapus semua</Button>}
       </div>
       {items.length ? (
         <div className="anime-grid explore-grid">
-          {items.map((item, index) => <AnimeCard key={item.slug} anime={item} index={index} />)}
+          {items.map((item) => <AnimeCard key={item.slug} anime={item} />)}
         </div>
       ) : (
         <div className="empty-state">
-          <span className="empty-state-mark">＋</span>
-          <h2>Your list starts here</h2>
-          <p>Save a series from its detail page and it will stay here on this device.</p>
+          <span className="empty-state-mark" aria-hidden="true">＋</span>
+          <h2>Watchlist masih kosong</h2>
+          <p>Simpan anime dari halaman detail. Daftar ini hanya tersimpan di perangkat yang sedang digunakan.</p>
         </div>
       )}
     </>

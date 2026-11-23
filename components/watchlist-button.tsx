@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Anime } from "@/lib/anime";
+import { Button } from "@/components/ui/button";
 
 const KEY = "streamnime.watchlist.v1";
 
@@ -28,8 +29,9 @@ export function WatchlistButton({ anime }: { anime: Anime }) {
   }
 
   return (
-    <button className={saved ? "button-secondary saved" : "button-secondary"} onClick={toggle} disabled={!ready}>
-      <span>{saved ? "✓" : "+"}</span>{saved ? "In your list" : "Add to my list"}
-    </button>
+    <Button variant="secondary" onClick={toggle} disabled={!ready} aria-pressed={saved}>
+      <span aria-hidden="true">{saved ? "✓" : "+"}</span>
+      {saved ? "Tersimpan" : "Simpan ke watchlist"}
+    </Button>
   );
 }

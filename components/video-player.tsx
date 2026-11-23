@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 type StreamServer = { title: string; serverId: string; href?: string; url?: string; groupTitle?: string };
 type StreamGroup = { title: string; serverList: StreamServer[] };
@@ -23,20 +24,21 @@ export function VideoPlayer({
   const [stream, setStream] = useState(initialStream);
   const [activeServer, setActiveServer] = useState("default");
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
   const servers = groups.flatMap((group) => (group.serverList || []).map((server) => ({ ...server, groupTitle: group.title })));
   const activeTrack = stream.subtitleUrl
-    ? { label: "Selected subtitles", language: "id", url: stream.subtitleUrl }
+    ? { label: "Subtitle", language: "id", url: stream.subtitleUrl }
     : tracks[0] || null;
 
   useEffect(() => {
     setStream(initialStream);
     setActiveServer("default");
+    setServerError("");
   }, [initialStream.url, initialStream.embed, initialStream.subtitleUrl]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !stream.url || stream.embed) return;
-
     let hls: { destroy: () => void } | null = null;
     let cancelled = false;
 
@@ -57,7 +59,7 @@ export function VideoPlayer({
           video.src = stream.url!;
         }
       } catch {
-        video.src = stream.url!;
+        if (!cancelled) video.src = stream.url!;
       }
     };
 
@@ -74,25 +76,26 @@ export function VideoPlayer({
   async function chooseServer(server: StreamServer) {
     if (loading) return;
     setLoading(true);
-    setActiveServer(server.serverId);
+    setServerError("");
     try {
-      const response = await fetch("/api/catalog/anime/server/" + encodeURIComponent(server.serverId));
-      if (!response.ok) throw new Error("Server unavailable");
+      const response = await fetch("/api/catalog/anime/server/" + encodeURIComponent(server.serverId), { cache: "no-store" });
+      if (!response.ok) throw new Error("Sumber tidak tersedia");
       const payload = await response.json();
       setStream({
         url: payload.url || server.url || "",
         embed: payload.embed || "",
         subtitleUrl: payload.subtitleUrl || "",
       });
+      setActiveServer(server.serverId);
     } catch {
-      setActiveServer("default");
+      setServerError("Sumber gagal diganti. Pilih server lain.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="player-column">
+    <div className="player-column" aria-busy={loading}>
       <div className="player-shell">
         {stream.embed ? (
           <iframe
@@ -104,39 +107,38 @@ export function VideoPlayer({
             referrerPolicy="strict-origin-when-cross-origin"
           />
         ) : stream.url ? (
-          <video ref={videoRef} controls playsInline preload="metadata" poster="" aria-label={animeTitle + " episode video"}>
-            {activeTrack?.url && <track kind="subtitles" src={activeTrack.url} srcLang={activeTrack.language || "id"} label={activeTrack.label || "Subtitles"} default />}
+          <video ref={videoRef} controls playsInline preload="metadata" aria-label={animeTitle + " " + episodeTitle}>
+            {activeTrack?.url && <track kind="subtitles" src={activeTrack.url} srcLang={activeTrack.language || "id"} label={activeTrack.label || "Subtitle"} default />}
           </video>
         ) : (
           <div className="player-unavailable">
-            <span>STREAM UNAVAILABLE</span>
-            <p>No playable source was returned for this episode.</p>
+            <span>SUMBER VIDEO TIDAK TERSEDIA</span>
+            <p>Tidak ada sumber yang bisa diputar untuk episode ini.</p>
           </div>
         )}
-        {loading && <div className="player-loading">Changing server…</div>}
+        {loading && <div className="player-loading" role="status">Mengganti server…</div>}
       </div>
       <div className="player-toolbar">
-        <div>
-          <span className="eyebrow">NOW PLAYING</span>
-          <strong>{animeTitle}</strong>
-          <p>{episodeTitle}</p>
-        </div>
+        <div><strong>{animeTitle}</strong><p>{episodeTitle}</p></div>
         <div className="server-picker">
-          <span className="server-caption">SOURCE</span>
+          <span className="server-caption">PILIH SERVER</span>
           <div className="server-buttons">
             {servers.length ? servers.map((server) => (
-              <button
+              <Button
                 key={server.serverId}
+                variant="chip"
                 className={activeServer === server.serverId ? "server-chip selected" : "server-chip"}
                 onClick={() => chooseServer(server)}
                 disabled={loading}
+                aria-pressed={activeServer === server.serverId}
               >
                 {server.groupTitle ? server.groupTitle + " · " + server.title : server.title}
-              </button>
+              </Button>
             )) : <span className="server-chip selected">Default</span>}
           </div>
         </div>
       </div>
+      {serverError && <p className="player-error" role="alert">{serverError}</p>}
     </div>
   );
 }
