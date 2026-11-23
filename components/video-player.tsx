@@ -52,6 +52,47 @@ export function VideoPlayer({
   const [serverError, setServerError] = useState("");
   const [playbackError, setPlaybackError] = useState("");
   const servers = groups.flatMap((group) => (group.serverList || []).map((server) => ({ ...server, groupTitle: group.title })));
+  // The API's default stream can be empty while its server list still contains working sources.
+  // Prefer the first Dub source as a fallback; the selected group remains visible in the server picker.
+  const autoFallbackServerId =
+    groups.find((group) => /dub/i.test(group.title) && group.serverList?.length)?.serverList[0]?.serverId
+    || groups.find((group) => group.serverList?.length)?.serverList[0]?.serverId
+    || "";
+
+  useEffect(() => {
+    if (initialStream.url || initialStream.embed || !autoFallbackServerId) return;
+
+    let active = true;
+    async function loadFallback() {
+      setLoading(true);
+      setServerError("");
+      try {
+        const response = await fetch("/api/catalog/anime/server/" + encodeURIComponent(autoFallbackServerId), { cache: "no-store" });
+        if (!response.ok) throw new Error("Fallback server unavailable");
+        const payload = await response.json();
+        const fallbackStream: Stream = {
+          url: payload.url || "",
+          embed: payload.embed || "",
+          subtitleUrl: payload.subtitleUrl || "",
+        };
+        if (!fallbackStream.url && !fallbackStream.embed) {
+          throw new Error("Fallback server returned no playable source");
+        }
+        if (active) {
+          setStream(fallbackStream);
+          setMode(getPlaybackMode(fallbackStream));
+          setActiveServer(autoFallbackServerId);
+        }
+      } catch {
+        if (active) setServerError("Sumber utama kosong. Pilih server lain untuk mencoba sumber berbeda.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadFallback();
+    return () => { active = false; };
+  }, [initialStream.url, initialStream.embed, autoFallbackServerId]);
   const activeTrack = stream.subtitleUrl
     ? { label: "Subtitle", language: "id", url: stream.subtitleUrl }
     : tracks[0] || null;
