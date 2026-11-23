@@ -3,6 +3,22 @@ import { animeList, type Anime } from "@/lib/anime";
 
 const API_BASE = process.env.NEXUS_CHAN_API_URL?.replace(/\/+$/, "");
 
+function rewriteApiReferences(value: any): any {
+  if (typeof value === "string") {
+    let result = value.replaceAll("/api/v1/", "/api/nexus/");
+    if (API_BASE) {
+      result = result.replaceAll(API_BASE, "/api/nexus");
+      result = result.replaceAll(encodeURIComponent(API_BASE), "/api/nexus");
+    }
+    return result;
+  }
+  if (Array.isArray(value)) return value.map(rewriteApiReferences);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, rewriteApiReferences(child)]));
+  }
+  return value;
+}
+
 export async function nexusFetch<T = any>(path: string, revalidate = 180): Promise<T | null> {
   if (!API_BASE) return null;
 
@@ -13,7 +29,8 @@ export async function nexusFetch<T = any>(path: string, revalidate = 180): Promi
     });
 
     if (!response.ok) return null;
-    return await response.json() as T;
+    const payload = await response.json();
+    return rewriteApiReferences(payload) as T;
   } catch {
     return null;
   }

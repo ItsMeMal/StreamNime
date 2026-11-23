@@ -95,6 +95,14 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
       });
     }
 
+    if (path.join("/") === "anime/hls" && /mpegurl|m3u8/i.test(contentType)) {
+      const playlist = await upstream.text();
+      const rewritten = playlist
+        .replaceAll("/api/v1/anime/hls", "/api/nexus/anime/hls")
+        .replaceAll(API_BASE, "/api/nexus");
+      return new NextResponse(rewritten, { status: 200, headers });
+    }
+
     return new NextResponse(upstream.body, { status: 200, headers });
   } catch {
     return NextResponse.json({ error: "Anime service is temporarily unavailable" }, { status: 502 });
