@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 180;
 
 const UPSTREAM_BASE_URL = process.env.STREAMNIME_UPSTREAM_URL?.replace(/\/+$/, "");
 
@@ -52,12 +53,15 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const upstreamUrl = new URL(`${UPSTREAM_BASE_URL}/${path.map(encodeURIComponent).join("/")}`);
+  const joinedPath = path.join("/");
+  const upstreamUrl = new URL(UPSTREAM_BASE_URL + "/" + path.map(encodeURIComponent).join("/"));
   request.nextUrl.searchParams.forEach((value, key) => upstreamUrl.searchParams.append(key, value));
 
-  const isMediaProxy = path.join("/") === "anime/hls" || path.join("/") === "anime/ai-subtitle";
+  const isMediaProxy = joinedPath === "anime/hls" || joinedPath === "anime/ai-subtitle";
+  const isStreamLookup = joinedPath.startsWith("anime/episode/") || joinedPath.startsWith("anime/server/");
+  const timeoutMs = isStreamLookup ? 165_000 : isMediaProxy ? 45_000 : 35_000;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 35_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const upstream = await fetch(upstreamUrl, {
@@ -95,7 +99,7 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
       });
     }
 
-    if (path.join("/") === "anime/hls" && /mpegurl|m3u8/i.test(contentType)) {
+    if (joinedPath === "anime/hls" && /mpegurl|m3u8/i.test(contentType)) {
       const playlist = await upstream.text();
       const rewritten = playlist
         .replaceAll("/api/v1/anime/hls", "/api/catalog/anime/hls")
@@ -104,7 +108,12 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     }
 
     return new NextResponse(upstream.body, { status: 200, headers });
-  } catch {
+  } catch (error) {
+    console.error("[streamnime-proxy] upstream request failed", {
+      path: joinedPath,
+      reason: error instanceof Error ? error.message : "unknown error",
+      timeoutMs,
+    });
     return NextResponse.json({ error: "Anime service is temporarily unavailable" }, { status: 502 });
   } finally {
     clearTimeout(timeout);

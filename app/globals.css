@@ -206,3 +206,10 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:poi
 }
 @media(max-width:380px){.anime-grid,.explore-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px}.card-copy h3{font-size:11px}.detail-hero{grid-template-columns:90px minmax(0,1fr);gap:11px}.detail-copy h1{font-size:21px}.footer-links{gap:9px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+
+.player-inline-error { margin: 7px 0 0 !important; color: #fda4af !important; font-size: 10px !important; }
+.player-error { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; }
+.player-error-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.player-error-actions a { color: #fda4af; font-size: 11px; font-weight: 600; }
+.player-error-actions a:hover { color: #fff; }
