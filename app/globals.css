@@ -289,3 +289,19 @@ button { cursor: pointer; }
   .footer-inner p { font-size: 12px; }
   .footer-note { margin-top: 7px; }
 }
+
+@media (max-width: 700px) {
+  .header-search {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+    height: 36px;
+    margin: 0 0 10px;
+    padding: 0 10px;
+    justify-content: flex-start;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.035);
+  }
+  .header-search input { display: block; font-size: 11px; }
+  .header-search kbd { display: none; }
+}
