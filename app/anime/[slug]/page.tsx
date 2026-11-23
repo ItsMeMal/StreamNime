@@ -5,7 +5,11 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  return { title: slug.replaceAll("-", " "), description: "Anime details and episodes on StreamNime." };
+  const title = slug.replaceAll("-", " ");
+  return {
+    title: "Detail anime " + title,
+    description: "Informasi, sinopsis, dan daftar episode " + title + " di StreamNime.",
+  };
 }
 
 export default async function AnimeDetailPage({ params }: Props) {

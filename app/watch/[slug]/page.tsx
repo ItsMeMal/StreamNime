@@ -8,7 +8,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  return { title: `Watch ${slug.replaceAll("-", " ")}` };
+  return { title: "Nonton " + slug.replaceAll("-", " ") };
 }
 
 export default async function WatchPage({ params, searchParams }: Props) {
