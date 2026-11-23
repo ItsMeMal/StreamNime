@@ -69,7 +69,7 @@ export function HomeFeed() {
                   {featured.score && <span>★ {featured.score}</span>}
                 </div>
                 <div className="hero-actions">
-                  <Link className="button-primary" href={\`/anime/\${encodeURIComponent(featured.slug)}\`}>Explore series <span>↗</span></Link>
+                  <Link className="button-primary" href={`/anime/${encodeURIComponent(featured.slug)}`}>Explore series <span>↗</span></Link>
                   <Link className="button-quiet" href="/anime">Browse catalogue <span>→</span></Link>
                 </div>
               </>

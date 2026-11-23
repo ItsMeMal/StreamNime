@@ -59,7 +59,7 @@ export function AnimeDetailView({ slug }: { slug: string }) {
 
   const sortedEpisodes = [...episodes].sort((a, b) => Number(a.number || 0) - Number(b.number || 0));
   const firstEpisode = sortedEpisodes[0];
-  const firstEpisodeId = firstEpisode?.id || \`\${slug}__ep__\${firstEpisode?.number || 1}\`;
+  const firstEpisodeId = firstEpisode?.id || `${slug}__ep__${firstEpisode?.number || 1}`;
   const genres = anime.genres || [];
   const watchlistAnime: Anime = { ...anime, episodes: sortedEpisodes };
 
@@ -88,7 +88,7 @@ export function AnimeDetailView({ slug }: { slug: string }) {
             <div className="genre-list">{genres.map((genre) => <span key={genre}>{genre}</span>)}</div>
           )}
           <div className="detail-actions">
-            {firstEpisode && <Link className="button-primary" href={\`/watch/\${encodeURIComponent(slug)}?episode=\${encodeURIComponent(firstEpisodeId)}\`}>Watch episode 1 <span>▶</span></Link>}
+            {firstEpisode && <Link className="button-primary" href={`/watch/${encodeURIComponent(slug)}?episode=${encodeURIComponent(firstEpisodeId)}`}>Watch episode 1 <span>▶</span></Link>}
             <WatchlistButton anime={watchlistAnime} />
           </div>
         </div>
@@ -104,11 +104,11 @@ export function AnimeDetailView({ slug }: { slug: string }) {
           <>
             <div className="episode-list">
               {sortedEpisodes.slice(0, visibleCount).map((episode, index) => {
-                const id = episode.id || \`\${slug}__ep__\${episode.number || index + 1}\`;
+                const id = episode.id || `${slug}__ep__${episode.number || index + 1}`;
                 return (
-                  <Link className="episode-row" key={id} href={\`/watch/\${encodeURIComponent(slug)}?episode=\${encodeURIComponent(id)}\`}>
+                  <Link className="episode-row" key={id} href={`/watch/${encodeURIComponent(slug)}?episode=${encodeURIComponent(id)}`}>
                     <span className="episode-number">{String(episode.number || index + 1).padStart(2, "0")}</span>
-                    <span className="episode-title">{episode.title || \`Episode \${index + 1}\`}</span>
+                    <span className="episode-title">{episode.title || `Episode ${index + 1}`}</span>
                     <span className="episode-date">{episode.date || "STREAM"}</span>
                     <span className="episode-arrow">↗</span>
                   </Link>

@@ -34,7 +34,7 @@ export function WatchView({ slug, requestedEpisode = "" }: { slug: string; reque
         const detail = await detailResponse.json();
         const animeValue = normalizeAnime(detail);
         const episodeList: Episode[] = Array.isArray(detail?.episodes) ? detail.episodes : [];
-        const resolvedId = requestedEpisode || episodeList[0]?.id || \`\${slug}__ep__1\`;
+        const resolvedId = requestedEpisode || episodeList[0]?.id || `${slug}__ep__1`;
 
         if (active) {
           setAnime(animeValue);
@@ -61,13 +61,13 @@ export function WatchView({ slug, requestedEpisode = "" }: { slug: string; reque
   const selectedIndex = Math.max(0, episodes.findIndex((episode) => episode.id === selectedEpisode));
   const selected = episodes[selectedIndex];
   const number = selected?.number || selectedIndex + 1;
-  const episodeTitle = selected?.title || \`Episode \${number}\`;
+  const episodeTitle = selected?.title || `Episode ${number}`;
   const upcoming = episodes.slice(selectedIndex, selectedIndex + 6);
 
   if (loading) {
     return (
       <main className="page-shell watch-page">
-        <Link href={\`/anime/\${encodeURIComponent(slug)}\`} className="back-link">← Back to anime</Link>
+        <Link href={`/anime/${encodeURIComponent(slug)}`} className="back-link">← Back to anime</Link>
         <div className="empty-state"><span className="empty-state-mark">◌</span><h2>Preparing your stream…</h2><p>Retrieving episode sources and subtitle tracks.</p></div>
       </main>
     );
@@ -76,7 +76,7 @@ export function WatchView({ slug, requestedEpisode = "" }: { slug: string; reque
   if (failed || !anime) {
     return (
       <main className="page-shell watch-page">
-        <Link href={\`/anime/\${encodeURIComponent(slug)}\`} className="back-link">← Back to anime</Link>
+        <Link href={`/anime/${encodeURIComponent(slug)}`} className="back-link">← Back to anime</Link>
         <div className="empty-state"><span className="empty-state-mark">∅</span><h2>Stream unavailable</h2><p>This episode could not be loaded from the catalogue.</p></div>
       </main>
     );
@@ -85,7 +85,7 @@ export function WatchView({ slug, requestedEpisode = "" }: { slug: string; reque
   return (
     <main className="page-shell watch-page">
       <div className="watch-topline">
-        <Link href={\`/anime/\${encodeURIComponent(slug)}\`} className="back-link">← {anime.title}</Link>
+        <Link href={`/anime/${encodeURIComponent(slug)}`} className="back-link">← {anime.title}</Link>
         <span>STREAMNIME PLAYER <i /> {String(number).padStart(2, "0")}</span>
       </div>
       <VideoPlayer
@@ -105,25 +105,25 @@ export function WatchView({ slug, requestedEpisode = "" }: { slug: string; reque
           <h1>{anime.title}</h1>
           <p>{episodeTitle}</p>
         </div>
-        <Link href={\`/anime/\${encodeURIComponent(slug)}\`} className="button-secondary">All episodes <span>↗</span></Link>
+        <Link href={`/anime/${encodeURIComponent(slug)}`} className="button-secondary">All episodes <span>↗</span></Link>
       </section>
       {upcoming.length > 0 && (
         <section className="watch-episode-strip">
           <div className="section-heading">
             <div><span className="eyebrow">UP NEXT</span><h2>Episode guide</h2></div>
-            <Link href={\`/anime/\${encodeURIComponent(slug)}\`} className="text-link">Full list ↗</Link>
+            <Link href={`/anime/${encodeURIComponent(slug)}`} className="text-link">Full list ↗</Link>
           </div>
           <div className="episode-strip">
             {upcoming.map((item, index) => {
-              const id = item.id || \`\${slug}__ep__\${item.number || selectedIndex + index + 1}\`;
+              const id = item.id || `${slug}__ep__${item.number || selectedIndex + index + 1}`;
               return (
                 <Link
                   key={id}
                   className={id === selectedEpisode ? "mini-episode current" : "mini-episode"}
-                  href={\`/watch/\${encodeURIComponent(slug)}?episode=\${encodeURIComponent(id)}\`}
+                  href={`/watch/${encodeURIComponent(slug)}?episode=${encodeURIComponent(id)}`}
                 >
                   <span>{String(item.number || selectedIndex + index + 1).padStart(2, "0")}</span>
-                  <strong>{item.title || \`Episode \${selectedIndex + index + 1}\`}</strong>
+                  <strong>{item.title || `Episode ${selectedIndex + index + 1}`}</strong>
                 </Link>
               );
             })}
