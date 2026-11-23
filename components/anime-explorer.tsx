@@ -1,14 +1,45 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Anime } from "@/lib/anime";
+import { animeList } from "@/lib/anime";
 import { AnimeCard } from "@/components/anime-card";
 
 export function AnimeExplorer({ initialAnime, initialQuery = "" }: { initialAnime: Anime[]; initialQuery?: string }) {
   const [items, setItems] = useState(initialAnime);
   const [query, setQuery] = useState(initialQuery);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(initialAnime.length === 0);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (initialAnime.length) {
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+    const endpoint = initialQuery.trim()
+      ? "/api/catalog/anime/search?q=" + encodeURIComponent(initialQuery.trim())
+      : "/api/catalog/anime?page=1&limit=36&sort=year";
+
+    fetch(endpoint, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("The catalogue is unavailable right now.");
+        return response.json();
+      })
+      .then((payload) => {
+        if (active) setItems(animeList(payload));
+      })
+      .catch((caught) => {
+        if (active) setError(caught instanceof Error ? caught.message : "Something went wrong.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [initialAnime.length, initialQuery]);
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,33 +52,9 @@ export function AnimeExplorer({ initialAnime, initialQuery = "" }: { initialAnim
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/api/catalog/anime/search?q=" + encodeURIComponent(value));
+      const response = await fetch("/api/catalog/anime/search?q=" + encodeURIComponent(value), { cache: "no-store" });
       if (!response.ok) throw new Error("Search is unavailable right now.");
-
-      const payload = await response.json();
-      const source = Array.isArray(payload)
-        ? payload
-        : payload?.items || payload?.results?.data || payload?.results || [];
-
-      const mapped: Anime[] = Array.isArray(source)
-        ? source.map((item: any): Anime => ({
-            id: String(item.id || item.slug || ""),
-            slug: String(item.slug || item.id || ""),
-            title: String(item.title || item.name || "Untitled anime"),
-            englishTitle: item.englishTitle || item.english_title || "",
-            poster: item.poster || item.image || item.thumbnail || "",
-            banner: item.banner || item.poster || "",
-            synopsis: item.synopsis || item.description || "",
-            type: item.type || "TV",
-            score: item.score ?? item.rating ?? null,
-            releaseYear: item.releaseYear ?? item.year ?? null,
-            status: item.status || "",
-            episodes: item.episodes || item.totalEpisodes || 0,
-            genres: Array.isArray(item.genres) ? item.genres : [],
-          }))
-        : [];
-
-      setItems(mapped.filter((item) => Boolean(item.slug)));
+      setItems(animeList(await response.json()));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong.");
     } finally {
@@ -71,18 +78,20 @@ export function AnimeExplorer({ initialAnime, initialQuery = "" }: { initialAnim
       </form>
       {error && <p className="form-error">{error}</p>}
       <div className="explore-result-line">
-        <span>{items.length} {items.length === 1 ? "title" : "titles"}</span>
+        <span>{loading ? "Loading titles…" : items.length + (items.length === 1 ? " title" : " titles")}</span>
         <span className="result-note">ANIME INDEX / STREAMNIME</span>
       </div>
-      {items.length ? (
+      {loading ? (
+        <div className="empty-inline"><span className="empty-dot" />Loading the anime catalogue…</div>
+      ) : items.length ? (
         <div className="anime-grid explore-grid">
           {items.map((item, index) => <AnimeCard key={item.slug} anime={item} index={index} />)}
         </div>
       ) : (
         <div className="empty-state">
           <span className="empty-state-mark">∅</span>
-          <h2>No titles found</h2>
-          <p>Try another title or clear the search to browse the catalogue.</p>
+          <h2>{error ? "Catalogue unavailable" : "No titles found"}</h2>
+          <p>{error || "Try another title or clear the search to browse the catalogue."}</p>
         </div>
       )}
     </>

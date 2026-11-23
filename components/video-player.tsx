@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type StreamServer = { title: string; serverId: string; href?: string; url?: string };
+type StreamServer = { title: string; serverId: string; href?: string; url?: string; groupTitle?: string };
 type StreamGroup = { title: string; serverList: StreamServer[] };
 type Track = { label?: string; language?: string; url: string };
 
@@ -21,10 +21,17 @@ export function VideoPlayer({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState(initialStream);
-  const [activeServer, setActiveServer] = useState("Default");
+  const [activeServer, setActiveServer] = useState("default");
   const [loading, setLoading] = useState(false);
-  const servers = groups.flatMap((group) => group.serverList || []);
-  const activeTrack = tracks[0] || (initialStream.subtitleUrl ? { label: "Indonesia", language: "id", url: initialStream.subtitleUrl } : null);
+  const servers = groups.flatMap((group) => (group.serverList || []).map((server) => ({ ...server, groupTitle: group.title })));
+  const activeTrack = stream.subtitleUrl
+    ? { label: "Selected subtitles", language: "id", url: stream.subtitleUrl }
+    : tracks[0] || null;
+
+  useEffect(() => {
+    setStream(initialStream);
+    setActiveServer("default");
+  }, [initialStream.url, initialStream.embed, initialStream.subtitleUrl]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -67,14 +74,18 @@ export function VideoPlayer({
   async function chooseServer(server: StreamServer) {
     if (loading) return;
     setLoading(true);
-    setActiveServer(server.title);
+    setActiveServer(server.serverId);
     try {
-      const response = await fetch(`/api/catalog/anime/server/${encodeURIComponent(server.serverId)}`);
+      const response = await fetch("/api/catalog/anime/server/" + encodeURIComponent(server.serverId));
       if (!response.ok) throw new Error("Server unavailable");
       const payload = await response.json();
-      setStream({ url: payload.url || server.url || "", embed: payload.embed || "", subtitleUrl: payload.subtitleUrl || "" });
+      setStream({
+        url: payload.url || server.url || "",
+        embed: payload.embed || "",
+        subtitleUrl: payload.subtitleUrl || "",
+      });
     } catch {
-      setActiveServer("Default");
+      setActiveServer("default");
     } finally {
       setLoading(false);
     }
@@ -87,13 +98,13 @@ export function VideoPlayer({
           <iframe
             key={stream.embed}
             src={stream.embed}
-            title={`${animeTitle} — ${episodeTitle}`}
+            title={animeTitle + " — " + episodeTitle}
             allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
           />
         ) : stream.url ? (
-          <video ref={videoRef} controls playsInline preload="metadata" poster="" aria-label={`${animeTitle} episode video`}>
+          <video ref={videoRef} controls playsInline preload="metadata" poster="" aria-label={animeTitle + " episode video"}>
             {activeTrack?.url && <track kind="subtitles" src={activeTrack.url} srcLang={activeTrack.language || "id"} label={activeTrack.label || "Subtitles"} default />}
           </video>
         ) : (
@@ -114,8 +125,13 @@ export function VideoPlayer({
           <span className="server-caption">SOURCE</span>
           <div className="server-buttons">
             {servers.length ? servers.map((server) => (
-              <button key={server.serverId} className={activeServer === server.title ? "server-chip selected" : "server-chip"} onClick={() => chooseServer(server)} disabled={loading}>
-                {server.title}
+              <button
+                key={server.serverId}
+                className={activeServer === server.serverId ? "server-chip selected" : "server-chip"}
+                onClick={() => chooseServer(server)}
+                disabled={loading}
+              >
+                {server.groupTitle ? server.groupTitle + " · " + server.title : server.title}
               </button>
             )) : <span className="server-chip selected">Default</span>}
           </div>

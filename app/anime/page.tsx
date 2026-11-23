@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import { AnimeExplorer } from "@/components/anime-explorer";
-import { getAnimeIndex } from "@/lib/upstream";
 
 export const metadata: Metadata = { title: "Explore anime" };
-export const revalidate = 120;
 
 export default async function AnimeIndexPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
-  const anime = await getAnimeIndex(q);
 
   return (
     <main className="page-shell inner-page">
@@ -19,7 +16,7 @@ export default async function AnimeIndexPage({ searchParams }: { searchParams: P
         </div>
         <p>From the first frame to the final scene. Browse by mood, title, or the feeling you can't quite name.</p>
       </section>
-      <AnimeExplorer initialAnime={anime} initialQuery={q} />
+      <AnimeExplorer initialAnime={[]} initialQuery={q} />
     </main>
   );
 }
