@@ -51,6 +51,7 @@ export function VideoPlayer({
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [playbackError, setPlaybackError] = useState("");
+  const [translatedSubtitleUrl, setTranslatedSubtitleUrl] = useState("");
   const servers = groups.flatMap((group) => (group.serverList || []).map((server) => ({ ...server, groupTitle: group.title })));
   // The API's default stream can be empty while its server list still contains working sources.
   // Prefer the first Dub source as a fallback; the selected group remains visible in the server picker.
@@ -93,9 +94,66 @@ export function VideoPlayer({
     void loadFallback();
     return () => { active = false; };
   }, [initialStream.url, initialStream.embed, autoFallbackServerId]);
-  const activeTrack = stream.subtitleUrl
-    ? { label: "Subtitle", language: "id", url: stream.subtitleUrl }
-    : tracks[0] || null;
+  const sourceSubtitleUrl = stream.subtitleUrl || tracks[0]?.url || "";
+
+  useEffect(() => {
+    if (!sourceSubtitleUrl) {
+      setTranslatedSubtitleUrl("");
+      return;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+    let objectUrl = "";
+    setTranslatedSubtitleUrl("");
+
+    async function loadIndonesianSubtitle() {
+      try {
+        // Nexus-Chan translates the source VTT to Indonesian. Pass an absolute URL
+        // because the API fetches it from its own server before translating.
+        const sourceUrl = new URL(sourceSubtitleUrl, window.location.origin).toString();
+        const translationUrl = "/api/catalog/anime/ai-subtitle?url=" + encodeURIComponent(sourceUrl);
+        const response = await fetch(translationUrl, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Subtitle translation unavailable");
+
+        const vtt = await response.text();
+        if (!vtt.trimStart().startsWith("WEBVTT")) {
+          throw new Error("Invalid translated subtitle");
+        }
+
+        const translatedBlob = new Blob([vtt], { type: "text/vtt;charset=utf-8" });
+        const nextObjectUrl = URL.createObjectURL(translatedBlob);
+        if (cancelled) {
+          URL.revokeObjectURL(nextObjectUrl);
+          return;
+        }
+
+        objectUrl = nextObjectUrl;
+        setTranslatedSubtitleUrl(nextObjectUrl);
+      } catch {
+        // Keep the original source subtitle available if translation fails.
+        if (!cancelled) setTranslatedSubtitleUrl("");
+      }
+    }
+
+    void loadIndonesianSubtitle();
+    return () => {
+      cancelled = true;
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [sourceSubtitleUrl]);
+
+  const activeTrack = sourceSubtitleUrl
+    ? {
+        label: "Bahasa Indonesia",
+        language: "id",
+        url: translatedSubtitleUrl || sourceSubtitleUrl,
+      }
+    : null;
 
   useEffect(() => {
     setStream(initialStream);
@@ -251,10 +309,11 @@ export function VideoPlayer({
           >
             {activeTrack?.url && (
               <track
+                key={activeTrack.url}
                 kind="subtitles"
                 src={activeTrack.url}
                 srcLang={getSubtitleLanguage(activeTrack.language)}
-                label={activeTrack.label || "Subtitle"}
+                label={activeTrack.label || "Bahasa Indonesia"}
                 default
               />
             )}
