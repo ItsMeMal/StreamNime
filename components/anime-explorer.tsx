@@ -17,28 +17,37 @@ export function AnimeExplorer({ initialAnime, initialQuery = "" }: { initialAnim
       window.location.href = "/anime";
       return;
     }
+
     setBusy(true);
     setError("");
     try {
-      const response = await fetch(`/api/catalog/anime/search?q=${encodeURIComponent(value)}`);
+      const response = await fetch("/api/catalog/anime/search?q=" + encodeURIComponent(value));
       if (!response.ok) throw new Error("Search is unavailable right now.");
+
       const payload = await response.json();
-      const source = Array.isArray(payload) ? payload : payload?.items || payload?.results?.data || payload?.results || [];
-      setItems(Array.isArray(source) ? source.map((item: any) => ({
-        id: String(item.id || item.slug || ""),
-        slug: String(item.slug || item.id || ""),
-        title: String(item.title || item.name || "Untitled anime"),
-        englishTitle: item.englishTitle || item.english_title || "",
-        poster: item.poster || item.image || item.thumbnail || "",
-        banner: item.banner || item.poster || "",
-        synopsis: item.synopsis || item.description || "",
-        type: item.type || "TV",
-        score: item.score ?? item.rating ?? null,
-        releaseYear: item.releaseYear ?? item.year ?? null,
-        status: item.status || "",
-        episodes: item.episodes || item.totalEpisodes || 0,
-        genres: item.genres || [],
-      })).filter((item: Anime) => item.slug) : [];
+      const source = Array.isArray(payload)
+        ? payload
+        : payload?.items || payload?.results?.data || payload?.results || [];
+
+      const mapped: Anime[] = Array.isArray(source)
+        ? source.map((item: any): Anime => ({
+            id: String(item.id || item.slug || ""),
+            slug: String(item.slug || item.id || ""),
+            title: String(item.title || item.name || "Untitled anime"),
+            englishTitle: item.englishTitle || item.english_title || "",
+            poster: item.poster || item.image || item.thumbnail || "",
+            banner: item.banner || item.poster || "",
+            synopsis: item.synopsis || item.description || "",
+            type: item.type || "TV",
+            score: item.score ?? item.rating ?? null,
+            releaseYear: item.releaseYear ?? item.year ?? null,
+            status: item.status || "",
+            episodes: item.episodes || item.totalEpisodes || 0,
+            genres: Array.isArray(item.genres) ? item.genres : [],
+          }))
+        : [];
+
+      setItems(mapped.filter((item) => Boolean(item.slug)));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong.");
     } finally {
@@ -50,8 +59,15 @@ export function AnimeExplorer({ initialAnime, initialQuery = "" }: { initialAnim
     <>
       <form className="explore-search" onSubmit={search}>
         <span className="search-symbol">⌕</span>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, studios, genres..." aria-label="Search the anime catalogue" />
-        <button type="submit" disabled={busy}>{busy ? "Searching…" : "Search"} <span>↗</span></button>
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search titles, studios, genres..."
+          aria-label="Search the anime catalogue"
+        />
+        <button type="submit" disabled={busy}>
+          {busy ? "Searching…" : "Search"} <span>↗</span>
+        </button>
       </form>
       {error && <p className="form-error">{error}</p>}
       <div className="explore-result-line">
