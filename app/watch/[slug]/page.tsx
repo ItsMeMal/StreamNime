@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAnimeDetail, nexusFetch } from "@/lib/upstream";
+import { getAnimeDetail, upstreamFetch } from "@/lib/upstream";
 import { VideoPlayer } from "@/components/video-player";
 
 type Props = {
@@ -22,7 +22,7 @@ export default async function WatchPage({ params, searchParams }: Props) {
 
   const episodes = Array.isArray(anime.episodes) ? anime.episodes : [];
   const selectedEpisode = query.episode || episodes[0]?.id || `${slug}__ep__1`;
-  const episode = await nexusFetch<any>(`anime/episode/${encodeURIComponent(selectedEpisode)}`, 60);
+  const episode = await upstreamFetch<any>(`anime/episode/${encodeURIComponent(selectedEpisode)}`, 60);
   const number = selectedEpisode.match(/(?:__ep__|:)(\d+)/)?.[1] || "1";
   const episodeTitle = episodes.find((item: any) => item.id === selectedEpisode)?.title || `Episode ${number}`;
   const groups = Array.isArray(episode?.servers) ? episode.servers : [];
