@@ -18,6 +18,7 @@ export default async function AnimeDetailPage({ params }: Props) {
   if (!anime) notFound();
 
   const episodes = Array.isArray(anime.episodes) ? [...anime.episodes].sort((a: any, b: any) => Number(a.number || 0) - Number(b.number || 0)) : [];
+  const genres = Array.isArray(anime.genres) ? anime.genres : [];
   const firstEpisode = episodes[0];
   const episodeId = firstEpisode?.id || `${slug}__ep__${firstEpisode?.number || 1}`;
 
@@ -42,8 +43,8 @@ export default async function AnimeDetailPage({ params }: Props) {
             <span>{episodes.length || Number(anime.episodes || 0) || "—"} EPISODES</span>
           </div>
           <p className="detail-synopsis">{anime.synopsis || "No synopsis has been supplied for this title."}</p>
-          {anime.genres?.length > 0 && (
-            <div className="genre-list">{anime.genres.map((genre: string) => <span key={genre}>{genre}</span>)}</div>
+          {genres.length > 0 && (
+            <div className="genre-list">{genres.map((genre: string) => <span key={genre}>{genre}</span>)}</div>
           )}
           <div className="detail-actions">
             {firstEpisode && <Link className="button-primary" href={`/watch/${encodeURIComponent(slug)}?episode=${encodeURIComponent(episodeId)}`}>Watch episode 1 <span>▶</span></Link>}
